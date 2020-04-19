@@ -12,6 +12,8 @@ steps:
   - 'dart-server'
   - '--image'
   - 'gcr.io/$PROJECT_ID/dart_server'
+  - '--region'
+  - europe-west1
   - '--platform'
   - 'managed'
   - '--allow-unauthenticated'
