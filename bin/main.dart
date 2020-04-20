@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_server/application.dart';
@@ -11,25 +10,19 @@ void main(final List<String> args) {
       method: 'GET',
       path: '/hello',
       handler: (request) {
-        request.response
-          ..headers.contentType = ContentType('text', 'plain', charset: 'utf-8')
-          ..write('Hello, world')
-          ..close();
+        return Response(body: 'Hello, world');
       },
     ))
     ..add(Route(
       method: 'POST',
       path: '/hello',
       handler: (request) async {
-        final content = await utf8.decoder.bind(request).join();
+        final content = await request.body;
         print(content);
-
-        final response = request.response
-          ..headers.contentType = ContentType('text', 'plain', charset: 'utf-8')
-          ..statusCode = HttpStatus.accepted;
-
-        await response.flush();
-        await response.close();
+        return Response(
+          body: '',
+          statusCode: HttpStatus.accepted,
+        );
       },
     ))
     ..start();

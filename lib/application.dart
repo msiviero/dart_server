@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:meta/meta.dart';
 
@@ -17,12 +19,22 @@ class Application {
     print('Started on port $host:$port');
 
     await for (final request in requests) {
-      final route = _router.match(request.method, request.uri.path);
-      if (route != null) {
-        route.handler(request);
-        continue;
+      try {
+        final route = _router.match(request.method, request.uri.path);
+        if (route != null) {
+          final response = await route.handler(Request(request));
+          final httpResponse = request.response
+            ..statusCode = response.statusCode
+            ..headers.contentType = response.contentType ??
+                ContentType('text', 'plain', charset: 'utf-8');
+          await httpResponse.write(response.body);
+          await httpResponse.close();
+        } else {
+          _sendNotFound(request);
+        }
+      } catch (e) {
+        _internalError(request, e);
       }
-      _sendNotFound(request);
     }
   }
 
@@ -30,6 +42,13 @@ class Application {
     request.response
       ..statusCode = HttpStatus.notFound
       ..write('Not found')
+      ..close();
+  }
+
+  void _internalError(HttpRequest request, Exception e) {
+    request.response
+      ..statusCode = HttpStatus.internalServerError
+      ..write(e)
       ..close();
   }
 }
@@ -49,8 +68,6 @@ class Router {
           .firstWhere((route) => route.matchPath(path), orElse: () => null);
 }
 
-typedef RouteHandler<T> = T Function(HttpRequest request);
-
 class Route {
   final RouteHandler<void> handler;
   final String method;
@@ -67,4 +84,28 @@ class Route {
   @override
   bool operator ==(other) =>
       (other is Route && other.method == method && other.path == path);
+}
+
+typedef RouteHandler<T> = FutureOr<Response> Function(Request request);
+
+class Request {
+  final HttpRequest originalRequest;
+
+  Request(this.originalRequest);
+
+  Future<String> get body async {
+    return utf8.decoder.bind(originalRequest).join();
+  }
+}
+
+class Response {
+  final String body;
+  final int statusCode;
+  final ContentType contentType;
+
+  Response({
+    this.body = '',
+    this.statusCode = HttpStatus.accepted,
+    this.contentType,
+  });
 }

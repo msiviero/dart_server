@@ -6,13 +6,13 @@ void main() {
     final r1 = Route(
       method: 'GET',
       path: '/a',
-      handler: (_) {},
+      handler: (request) => Response(),
     );
 
     final r2 = Route(
       method: 'GET',
       path: '/a',
-      handler: (_) {},
+      handler: (request) => Response(),
     );
 
     expect(r1 == r2, equals(true));
@@ -22,13 +22,13 @@ void main() {
     final route1 = Route(
       method: 'GET',
       path: '/a',
-      handler: (_) {},
+      handler: (request) => Response(),
     );
 
     final route2 = Route(
       method: 'PUT',
       path: '/b',
-      handler: (_) {},
+      handler: (request) => Response(),
     );
 
     final underTest = Router()..add(route1)..add(route2);
