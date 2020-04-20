@@ -33,8 +33,8 @@ void main() {
 
     final underTest = Router()..add(route1)..add(route2);
 
-    expect(underTest.route('get', '/'), equals(Route.notFound()));
-    expect(underTest.route('post', '/b'), equals(Route.notFound()));
-    expect(underTest.route('put', '/b'), equals(route2));
+    expect(underTest.match('get', '/'), equals(null));
+    expect(underTest.match('post', '/b'), equals(null));
+    expect(underTest.match('put', '/b'), equals(route2));
   });
 }

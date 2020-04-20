@@ -16,10 +16,21 @@ class Application {
     final requests = await HttpServer.bind(host, port);
     print('Started on port $host:$port');
 
-    await for (var request in requests) {
-      final route = _router.route(request.method, request.uri.path);
-      route.handler(request);
+    await for (final request in requests) {
+      final route = _router.match(request.method, request.uri.path);
+      if (route != null) {
+        route.handler(request);
+        continue;
+      }
+      _sendNotFound(request);
     }
+  }
+
+  void _sendNotFound(HttpRequest request) {
+    request.response
+      ..statusCode = HttpStatus.notFound
+      ..write('Not found')
+      ..close();
   }
 }
 
@@ -33,10 +44,9 @@ class Router {
     _routes[method] = methodRoutes;
   }
 
-  Route route(String method, String path) =>
-      (_routes[method.toLowerCase()] ?? []).firstWhere(
-          (route) => route.matchPath(path),
-          orElse: () => Route.notFound());
+  Route match(String method, String path) =>
+      (_routes[method.toLowerCase()] ?? [])
+          .firstWhere((route) => route.matchPath(path), orElse: () => null);
 }
 
 typedef RouteHandler<T> = T Function(HttpRequest request);
@@ -45,16 +55,6 @@ class Route {
   final RouteHandler<void> handler;
   final String method;
   final String path;
-
-  Route.notFound()
-      : this(
-          method: '',
-          path: '',
-          handler: (request) => request.response
-            ..statusCode = HttpStatus.notFound
-            ..write('404 - Not found')
-            ..close(),
-        );
 
   Route({
     @required this.handler,
